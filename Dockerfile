@@ -2,7 +2,7 @@
 # Build container
 ################################################################################
 
-FROM gradle:latest AS BUILDER
+FROM gradle:jdk8 AS BUILDER
 
 WORKDIR /home/gradle
 
