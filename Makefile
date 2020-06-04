@@ -2,16 +2,25 @@ default: docker-run
 
 all: docker-build docker-run
 
-pristine: clean-output clean-sources fetch-sources docker-build docker-run
+pristine: clean clean-sources fetch-sources docker-build docker-run
 
-docker-build:
-	docker build . -t svg-to-vector
+docker-build: docker-build-android docker-build-ios
+docker-build-android:
+	docker build . -t svg-to-android -f Dockerfile.android
+docker-build-ios:
+	docker build . -t svg-to-ios -f Dockerfile.ios
 
-docker-run:
-	docker run --rm -it  -v $$(PWD)/mount/input:/mounts/input -v $$(PWD)/mount/output:/mounts/output svg-to-vector
+docker-run: docker-run-android docker-run-ios
+docker-run-android:
+	docker run --rm -it  -v $$(PWD)/mount/input:/mounts/input -v $$(PWD)/mount/output:/mounts/output svg-to-android
+docker-run-ios:
+	docker run --rm -it  -v $$(PWD)/mount/input:/mounts/input -v $$(PWD)/mount/output:/mounts/output svg-to-ios
 
-clean-output:
-	rm -rf mount/output/*.xml
+clean: clean-android clean-ios
+clean-android:
+	rm -rf mount/output/android/*
+clean-ios:
+	rm -rf mount/output/ios/*
 
 clean-sources:
 	rm -rf src/main/java/com/android

@@ -13,8 +13,16 @@ import java.util.stream.Stream;
 import com.android.ide.common.vectordrawable.Svg2Vector;
 
 public class Application {
+    private static final String DIR_INPUT = "/mounts/input";
+    private static final String DIR_OUTPUT = "/mounts/output/android";
+
     public static void main(final String[] args) {
-        try (Stream<Path> paths = Files.walk(Paths.get("/mounts/input"))) {
+        File outdir = new File(DIR_OUTPUT);
+        if (!outdir.exists()) {
+            outdir.mkdirs();
+        }
+
+        try (Stream<Path> paths = Files.walk(Paths.get(DIR_INPUT))) {
             paths.filter(Files::isRegularFile).filter(Application::isSvg).forEach(Application::convertToXml);
         } catch (final IOException e) {
             e.printStackTrace();
@@ -27,7 +35,7 @@ public class Application {
     private static void convertToXml(final Path path) {
         try {
             final File infile = path.toFile();
-            final File outfile = new File(String.format("/mounts/output/%s", getXmlFilename(infile.getName())));
+            final File outfile = new File(DIR_OUTPUT + "/" + getXmlFilename(infile.getName()));
 
             if (outfile.exists()) {
                 System.out.println(String.format("[%s] already exists... skipping", outfile.getName()));

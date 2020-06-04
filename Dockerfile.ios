@@ -1,0 +1,11 @@
+FROM alpine
+
+WORKDIR /opt/target
+VOLUME /mounts/input /mounts/output
+
+RUN apk --no-cache add \
+    inkscape \
+    bash
+COPY convert-ios.sh .
+
+CMD ["bash", "convert-ios.sh", "/mounts/input", "/mounts/output"]
