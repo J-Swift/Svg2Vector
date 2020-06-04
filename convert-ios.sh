@@ -70,9 +70,9 @@ EOF
 
 function main() {
     for filename in "${in_dir}"/*.svg; do
-        local -r raw_name=$(get_name_without_extension "${filename}")
+        local raw_name=$(get_name_without_extension "${filename}")
 
-        local -r asset_name="${raw_name}.imageset"
+        local asset_name="${raw_name}.imageset"
 
         if [ -f "${out_dir}/${asset_name}" ] || [ -d "${out_dir}/${asset_name}" ]; then
             echo "[${asset_name}] already exists... skipping"
