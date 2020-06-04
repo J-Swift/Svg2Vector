@@ -1,3 +1,5 @@
+default: docker-run
+
 all: docker-build docker-run
 
 pristine: clean-output clean-sources fetch-sources docker-build docker-run
