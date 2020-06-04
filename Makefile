@@ -12,15 +12,15 @@ docker-build-ios:
 
 docker-run: docker-run-android docker-run-ios
 docker-run-android:
-	docker run --rm -it  -v $$(PWD)/mount/input:/mounts/input -v $$(PWD)/mount/output:/mounts/output svg-to-android
+	docker run --rm -it  -v $$(PWD)/mounts/input:/mounts/input -v $$(PWD)/mounts/output:/mounts/output svg-to-android
 docker-run-ios:
-	docker run --rm -it  -v $$(PWD)/mount/input:/mounts/input -v $$(PWD)/mount/output:/mounts/output svg-to-ios
+	docker run --rm -it  -v $$(PWD)/mounts/input:/mounts/input -v $$(PWD)/mounts/output:/mounts/output svg-to-ios
 
 clean: clean-android clean-ios
 clean-android:
-	rm -rf mount/output/android/*
+	rm -rf mounts/output/android/*
 clean-ios:
-	rm -rf mount/output/ios/*
+	rm -rf mounts/output/ios/*
 
 clean-sources:
 	rm -rf src/main/java/com/android
