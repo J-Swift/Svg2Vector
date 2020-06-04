@@ -20,6 +20,7 @@ RUN mv build/libs/gradle.jar application.jar
 FROM amazoncorretto:8
 
 WORKDIR /opt/target
+VOLUME /mounts/input /mounts/output
 
 COPY --from=BUILDER /home/gradle/application.jar .
 
