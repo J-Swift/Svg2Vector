@@ -37,6 +37,7 @@ public class Application {
             try (OutputStream output = new FileOutputStream(outfile)) {
                 System.out.print(String.format("Converting [%s] to [%s]...", infile.getName(), outfile.getName()));
                 Svg2Vector.parseSvgToXml(infile, output);
+                System.out.println(" done");
             }
         } catch (final FileNotFoundException fnf) {
             System.out.println(" error");
