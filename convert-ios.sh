@@ -31,8 +31,18 @@ function convert_to_pdf() {
     local -r tmp_file=$( mktemp )
     mv "${tmp_file}" "${tmp_file}.pdf"
 
-    GDK_BACKEND=x11 inkscape --export-filename="${tmp_file}.pdf" "${infile}"
-    write_imageset "${tmp_file}.pdf" "${out_basename}"
+    GDK_BACKEND=x11 inkscape --export-filename="${tmp_file}.pdf" "${infile}" 2>/dev/null
+    if detect_if_error "${tmp_file}.pdf"; then
+        return 1
+    else
+        write_imageset "${tmp_file}.pdf" "${out_basename}"
+        return 0
+    fi
+}
+
+function detect_if_error() {
+    local -r outfile="${1}"
+    [ ! -s "${outfile}" ]
 }
 
 # infile = /tmp/foo.j2ojaoi.pdf
@@ -69,6 +79,8 @@ EOF
 ################################################################################
 
 function main() {
+    local numErrors=0
+
     for filename in "${in_dir}"/*.svg; do
         local raw_name=$(get_name_without_extension "${filename}")
 
@@ -80,12 +92,20 @@ function main() {
         fi
 
         echo -n "Converting [$(basename ${filename})] to [${asset_name}]..."
-        convert_to_pdf "${filename}" "${raw_name}"
-        echo " done"
+        if convert_to_pdf "${filename}" "${raw_name}"; then
+            echo " done"
+        else
+            numErrors=$((numErrors+1))
+            echo " error"
+        fi
     done
 
+    if [ $numErrors -eq 0 ]; then
+        echo 'Done!'
+    else
+        echo "Done with [${numErrors}] errors!"
+    fi
     echo ""
-    echo 'Done!'
 }
 
 main

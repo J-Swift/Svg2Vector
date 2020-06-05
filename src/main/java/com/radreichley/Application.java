@@ -16,8 +16,10 @@ public class Application {
     private static final String DIR_INPUT = "/mounts/input";
     private static final String DIR_OUTPUT = "/mounts/output/android";
 
+    private static int numErrors = 0;
+
     public static void main(final String[] args) {
-        File outdir = new File(DIR_OUTPUT);
+        final File outdir = new File(DIR_OUTPUT);
         if (!outdir.exists()) {
             outdir.mkdirs();
         }
@@ -28,8 +30,12 @@ public class Application {
             e.printStackTrace();
         }
 
+        if (numErrors == 0) {
+            System.out.println("Done!");
+        } else {
+            System.out.println(String.format("Done with [%d] errors!", numErrors));
+        }
         System.out.println("");
-        System.out.println("Done!");
     }
 
     private static void convertToXml(final Path path) {
@@ -44,17 +50,21 @@ public class Application {
 
             try (OutputStream output = new FileOutputStream(outfile)) {
                 System.out.print(String.format("Converting [%s] to [%s]...", infile.getName(), outfile.getName()));
-                Svg2Vector.parseSvgToXml(infile, output);
-                System.out.println(" done");
+                final String msg = Svg2Vector.parseSvgToXml(infile, output);
+                if (msg != null && !msg.isEmpty()) {
+                    System.out.println(" error");
+                    numErrors++;
+                    if (outfile.exists()) {
+                        outfile.delete();
+                    }
+                } else {
+                    System.out.println(" done");
+                }
             }
         } catch (final FileNotFoundException fnf) {
             System.out.println(" error");
-            System.out.println();
-            fnf.printStackTrace();
         } catch (final IOException io) {
             System.out.println(" error");
-            System.out.println();
-            io.printStackTrace();
         }
     }
 
