@@ -51,7 +51,11 @@ public class Application {
             try (OutputStream output = new FileOutputStream(outfile)) {
                 System.out.print(String.format("Converting [%s] to [%s]...", infile.getName(), outfile.getName()));
                 final String msg = Svg2Vector.parseSvgToXml(infile, output);
-                if (msg != null && !msg.isEmpty()) {
+                // NOTE(jpr): Svg2Vector has some odd behaviour with regard to error messages. Even though it initializes
+                // the message to `null`, it comes through as an empty string in a lot of cases. There are also times where
+                // something is logged to the message but the file is still generated (e.g. `defs` is special cased in
+                // their code)
+                if (msg != null && !msg.isEmpty() && outfile.length() == 0) {
                     System.out.println(" error");
                     numErrors++;
                     if (outfile.exists()) {
