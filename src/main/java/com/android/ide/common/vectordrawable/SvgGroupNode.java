@@ -18,6 +18,7 @@ package com.android.ide.common.vectordrawable;
 
 import org.w3c.dom.Node;
 
+import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import java.util.logging.Logger;
 class SvgGroupNode extends SvgNode {
     private static Logger logger = Logger.getLogger(SvgGroupNode.class.getSimpleName());
     private static final String INDENT_LEVEL = "    ";
+
     private ArrayList<SvgNode> mChildren = new ArrayList<SvgNode>();
 
     public SvgGroupNode(SvgTree svgTree, Node docNode, String name) {
@@ -37,7 +39,11 @@ class SvgGroupNode extends SvgNode {
     }
 
     public void addChild(SvgNode child) {
+        // Pass the presentation map down to the children, who can override the attributes.
         mChildren.add(child);
+        // The child has its own attributes map. But the parents can still fill some attributes
+        // if they don't exists
+        child.fillEmptyAttributes(mVdAttributesMap);
     }
 
     @Override
@@ -57,9 +63,18 @@ class SvgGroupNode extends SvgNode {
     }
 
     @Override
-    public void transform(float a, float b, float c, float d, float e, float f) {
+    public void transformIfNeeded(AffineTransform rootTransform) {
         for (SvgNode p : mChildren) {
-            p.transform(a, b, c, d, e, f);
+            p.transformIfNeeded(rootTransform);
+        }
+    }
+
+    @Override
+    public void flattern(AffineTransform transform) {
+        for (SvgNode n : mChildren) {
+            mStackedTransform.setTransform(transform);
+            mStackedTransform.concatenate(mLocalTransform);
+            n.flattern(mStackedTransform);
         }
     }
 

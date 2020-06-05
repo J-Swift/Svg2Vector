@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2011 The Android Open Source Project
  *
- * Licensed under the Eclipse Public License, Version 1.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.eclipse.org/org/documents/epl-v10.php
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,14 +32,14 @@ import java.lang.annotation.Target;
  * default assumption made by most static code checking tools, so usually you
  * don't need to use this annotation; its primary use is to override a default
  * wider annotation like {@link NonNullByDefault}.
- * <p/>
+ * <p>
  * When decorating a method call parameter, this denotes the parameter can
  * legitimately be null and the method will gracefully deal with it. Typically
  * used on optional parameters.
- * <p/>
+ * <p>
  * When decorating a method, this denotes the method might legitimately return
  * null.
- * <p/>
+ * <p>
  * This is a marker annotation and it has no specific attributes.
  */
 @Documented

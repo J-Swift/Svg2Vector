@@ -15,7 +15,7 @@ For consistency, I recommend naming input files using the convention `ic_{name}.
 
 ### Android
 
-The xml conversion code was manually extracted from AOSP by starting with `Svg2Vector` and fixing compiler errors until there weren't any more. I chose this path rather than using something like https://github.com/alexjlockwood/svg2vd because I want to use the canonical source.
+The xml conversion code was manually extracted from the JetBrains copy of AOSP by starting with `Svg2Vector` and fixing compiler errors until there weren't any more. I chose this path rather than using something like https://github.com/alexjlockwood/svg2vd because I want to use the canonical source.
 
 ### iOS
 

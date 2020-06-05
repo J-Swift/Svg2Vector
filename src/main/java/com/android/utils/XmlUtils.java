@@ -33,6 +33,10 @@ import static com.google.common.base.Charsets.UTF_8;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
+import com.google.common.base.CharMatcher;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Attr;
@@ -44,18 +48,25 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 /** XML Utilities */
 public class XmlUtils {
@@ -68,6 +79,8 @@ public class XmlUtils {
      * Separator for xml namespace and localname
      */
     public static final char NS_SEPARATOR = ':';                  //$NON-NLS-1$
+
+    private static final String SOURCE_FILE_USER_DATA_KEY = "sourcefile";
 
     /**
      * Returns the namespace prefix matching the requested namespace URI.
@@ -188,7 +201,7 @@ public class XmlUtils {
         for (int i = 1; visited.contains(prefix); i++) {
             prefix = base + Integer.toString(i);
         }
-        // Also create & define this prefix/URI in the XML document as an attribute in the
+        // Also create and define this prefix/URI in the XML document as an attribute in the
         // first element of the document.
         if (doc != null) {
             node = doc.getFirstChild();
@@ -311,7 +324,20 @@ public class XmlUtils {
      * @param textValue the text value to be appended and escaped
      */
     public static void appendXmlTextValue(@NonNull StringBuilder sb, @NonNull String textValue) {
-        for (int i = 0, n = textValue.length(); i < n; i++) {
+        appendXmlTextValue(sb, textValue, 0, textValue.length());
+    }
+
+    /**
+     * Appends text to the given {@link StringBuilder} and escapes it as required for a
+     * DOM text node.
+     *
+     * @param sb        the string builder
+     * @param start     the starting offset in the text string
+     * @param end       the ending offset in the text string
+     * @param textValue the text value to be appended and escaped
+     */
+    public static void appendXmlTextValue(@NonNull StringBuilder sb, @NonNull String textValue, int start, int end) {
+        for (int i = start, n = Math.min(textValue.length(), end); i < n; i++) {
             char c = textValue.charAt(i);
             if (c == '<') {
                 sb.append(LT_ENTITY);
@@ -421,8 +447,22 @@ public class XmlUtils {
     public static Document parseDocument(@NonNull String xml, boolean namespaceAware)
             throws ParserConfigurationException, IOException, SAXException {
         xml = stripBom(xml);
+        return parseDocument(new StringReader(xml), namespaceAware);
+    }
+
+    /**
+     * Parses the given {@link Reader} as a DOM document, using the JDK parser. The parser does not
+     * validate, and is optionally namespace aware.
+     *
+     * @param xml            a reader for the XML content to be parsed (must be well formed)
+     * @param namespaceAware whether the parser is namespace aware
+     * @return the DOM document
+     */
+    @NonNull
+    public static Document parseDocument(@NonNull Reader xml, boolean namespaceAware)
+            throws ParserConfigurationException, IOException, SAXException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        InputSource is = new InputSource(new StringReader(xml));
+        InputSource is = new InputSource(xml);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(false);
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -487,25 +527,33 @@ public class XmlUtils {
      * To perform pretty printing, use {@code XmlPrettyPrinter.prettyPrint(node)} in
      * {@code sdk-common}.
      */
-    public static String toXml(Node node) {
-        StringBuilder sb = new StringBuilder(1000);
-        append(sb, node, 0);
+    public static String toXml(@NonNull Node node) {
+        return toXml(node, null);
+    }
+    public static String toXml(
+            @NonNull Node node,
+            @Nullable Map<SourcePosition, SourceFilePosition> blame) {
+        PositionAwareStringBuilder sb = new PositionAwareStringBuilder(1000);
+        append(sb, node, blame);
         return sb.toString();
     }
 
     /** Dump node to string without indentation adjustments */
     private static void append(
-            @NonNull StringBuilder sb,
+            @NonNull PositionAwareStringBuilder sb,
             @NonNull Node node,
-            int indent) {
+            @Nullable Map<SourcePosition, SourceFilePosition> blame) {
         short nodeType = node.getNodeType();
+        int currentLine = sb.line;
+        int currentColumn = sb.column;
+        int currentOffset = sb.getOffset();
         switch (nodeType) {
             case Node.DOCUMENT_NODE:
             case Node.DOCUMENT_FRAGMENT_NODE: {
                 sb.append(XML_PROLOG);
                 NodeList children = node.getChildNodes();
                 for (int i = 0, n = children.getLength(); i < n; i++) {
-                    append(sb, children.item(i), indent);
+                    append(sb, children.item(i), blame);
                 }
                 break;
             }
@@ -552,11 +600,22 @@ public class XmlUtils {
                 if (childCount > 0) {
                     for (int i = 0; i < childCount; i++) {
                         Node child = children.item(i);
-                        append(sb, child, indent + 1);
+                        append(sb, child, blame);
                     }
                     sb.append('<').append('/');
                     sb.append(element.getTagName());
                     sb.append('>');
+                }
+
+                if (blame != null) {
+                    SourceFilePosition position = getSourceFilePosition(node);
+                    if (!position.equals(SourceFilePosition.UNKNOWN)) {
+                        blame.put(
+                                new SourcePosition(
+                                        currentLine, currentColumn, currentOffset,
+                                        sb.line, sb.column, sb.getOffset()),
+                                position);
+                    }
                 }
                 break;
             }
@@ -565,6 +624,72 @@ public class XmlUtils {
                 throw new UnsupportedOperationException(
                         "Unsupported node type " + nodeType + ": not yet implemented");
         }
+    }
+
+    /**
+     * Wraps a StringBuilder, but keeps track of the line and column of the end of the string.
+     *
+     * It implements append(String) and append(char) which as well as delegating to the underlying
+     * StringBuilder also keep track of any new lines, and set the line and column fields.
+     * The StringBuilder itself keeps track of the actual character offset.
+     */
+    private static class PositionAwareStringBuilder {
+        @SuppressWarnings("StringBufferField")
+        private final StringBuilder sb;
+        int line = 0;
+        int column = 0;
+
+        public PositionAwareStringBuilder(int size) {
+            sb = new StringBuilder(size);
+        }
+
+        public PositionAwareStringBuilder append(String text) {
+            sb.append(text);
+            // we find the last, as it might be useful later.
+            int lastNewLineIndex = text.lastIndexOf('\n');
+            if (lastNewLineIndex == -1) {
+                // If it does not contain a new line, we just increase the column number.
+                column += text.length();
+            } else {
+                // The string could contain multiple new lines.
+                line += CharMatcher.is('\n').countIn(text);
+                // But for column we only care about the number of characters after the last one.
+                column = text.length() - lastNewLineIndex - 1;
+            }
+            return this;
+        }
+
+        public PositionAwareStringBuilder append(char character) {
+            sb.append(character);
+            if (character == '\n') {
+                line += 1;
+                column = 0;
+            } else {
+                column++;
+            }
+            return this;
+        }
+
+        public int getOffset() {
+            return sb.length();
+        }
+
+        @Override
+        public String toString() {
+            return sb.toString();
+        }
+    }
+
+    public static void attachSourceFile(Node node, SourceFile sourceFile) {
+        node.setUserData(SOURCE_FILE_USER_DATA_KEY, sourceFile, null);
+    }
+
+    public static SourceFilePosition getSourceFilePosition(Node node) {
+        SourceFile sourceFile = (SourceFile) node.getUserData(SOURCE_FILE_USER_DATA_KEY);
+        if (sourceFile == null) {
+            sourceFile = SourceFile.UNKNOWN;
+        }
+        return new SourceFilePosition(sourceFile, PositionXmlParser.getPosition(node));
     }
 
     /**
@@ -582,5 +707,29 @@ public class XmlUtils {
         } else {
             return Integer.toString((int) value);
         }
+    }
+
+    /**
+     * Returns the name of the root element tag stored in the given file, or null if it can't be
+     * determined.
+     */
+    @Nullable
+    public static String getRootTagName(@NonNull File xmlFile) {
+        try (InputStream stream = new BufferedInputStream(new FileInputStream(xmlFile))) {
+            XMLInputFactory factory = XMLInputFactory.newFactory();
+            XMLStreamReader xmlStreamReader =
+                    factory.createXMLStreamReader(stream);
+
+            while (xmlStreamReader.hasNext()) {
+                int event = xmlStreamReader.next();
+                if (event == XMLStreamReader.START_ELEMENT) {
+                    return xmlStreamReader.getLocalName();
+                }
+            }
+        } catch (XMLStreamException | IOException ignored) {
+            // Ignored.
+        }
+
+        return null;
     }
 }
