@@ -16,7 +16,8 @@ public class Application {
     private static final String DIR_INPUT = "/mounts/input";
     private static final String DIR_OUTPUT = "/mounts/output/android";
 
-    private static int numErrors = 0;
+    private static int numWarnings = 0;
+    private static int numErrors   = 0;
 
     public static void main(final String[] args) {
         final File outdir = new File(DIR_OUTPUT);
@@ -30,10 +31,10 @@ public class Application {
             e.printStackTrace();
         }
 
-        if (numErrors == 0) {
+        if (numErrors == 0 && numWarnings == 0) {
             System.out.println("Done!");
         } else {
-            System.out.println(String.format("Done with [%d] errors!", numErrors));
+            System.out.println(String.format("Done with [%d] warnings [%d] errors!", numWarnings, numErrors));
         }
         System.out.println("");
     }
@@ -55,11 +56,16 @@ public class Application {
                 // the message to `null`, it comes through as an empty string in a lot of cases. There are also times where
                 // something is logged to the message but the file is still generated (e.g. `defs` is special cased in
                 // their code)
-                if (msg != null && !msg.isEmpty() && outfile.length() == 0) {
-                    System.out.println(" error");
-                    numErrors++;
-                    if (outfile.exists()) {
-                        outfile.delete();
+                if (msg != null && !msg.isEmpty()) {
+                    if (outfile.length() != 0) {
+                        System.out.println(" warning");
+                        numWarnings++;
+                    } else {
+                        System.out.println(" error");
+                        numErrors++;
+                        if (outfile.exists()) {
+                            outfile.delete();
+                        }
                     }
                 } else {
                     System.out.println(" done");

@@ -1,20 +1,34 @@
-apply plugin: 'java-library'
-
-repositories { 
-  mavenCentral()
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        // NOTE(jpr): version taken from git://git.jetbrains.org/idea/adt-tools-base.git/third_party/BUILD
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.41"
+    }
 }
 
+repositories {
+    mavenCentral()
+}
+
+apply plugin: 'kotlin'
+apply plugin: 'java-library'
+
 dependencies {
-  implementation "com.google.guava:guava:19.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    // NOTE(jpr): version taken from git://git.jetbrains.org/idea/adt-tools-base.git/third_party/BUILD
+    implementation "com.google.guava:guava:27.0.1-jre"
 }
 
 jar {
-  manifest {
-    attributes(
-      'Main-Class': 'com.radreichley.Application'
-    )
-  }
-  from {
-    configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-  }
+    manifest {
+        attributes(
+            'Main-Class': 'com.radreichley.Application'
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
