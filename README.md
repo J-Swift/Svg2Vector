@@ -2,7 +2,7 @@
 
 This is intended to be an easy CLI to convert Svg files to vector assets for both ios and android. There are a couple online tools that can do this, but I wanted something more configurable and programmatic (i.e. CLI-driven).
 
-### Rquirements
+### Requirements
 
 - Docker
 - Make (optional)
