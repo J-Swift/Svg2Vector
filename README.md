@@ -19,4 +19,7 @@ The xml conversion code was manually extracted from the JetBrains copy of AOSP b
 
 ### iOS
 
-The pdf conversion code leverages Inkscape CLI. It also handles generating appropriate asset catalog directories in addition to the `pdf` files. This makes it simple to drag and drop into a project.
+iOS supports both PDF and SVG vectors natively, depending on the OS version. We generate both, including asset catalog directories, and put them in mounts/output/ios-pdf and mounts/output/ios-svg respectively.
+
+The pdf conversion code leverages Inkscape CLI.
+
