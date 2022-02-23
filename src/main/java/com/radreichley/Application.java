@@ -14,7 +14,7 @@ import com.android.ide.common.vectordrawable.Svg2Vector;
 
 public class Application {
     private static final String DIR_INPUT = "/mounts/input";
-    private static final String DIR_OUTPUT = "/mounts/output/android";
+    private static final String DIR_OUTPUT = "/mounts/output";
 
     private static int numWarnings = 0;
     private static int numErrors   = 0;

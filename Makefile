@@ -4,23 +4,29 @@ all: docker-build docker-run
 
 pristine: clean clean-sources fetch-sources docker-build docker-run
 
-docker-build: docker-build-android docker-build-ios
+docker-build: docker-build-android docker-build-ios-pdf docker-build-ios-svg
 docker-build-android:
 	docker build . -t svg-to-android -f Dockerfile.android
-docker-build-ios:
-	docker build . -t svg-to-ios -f Dockerfile.ios
+docker-build-ios-pdf:
+	docker build . -t svg-to-ios-pdf -f Dockerfile.pdf.ios
+docker-build-ios-svg:
+	docker build . -t svg-to-ios-svg -f Dockerfile.svg.ios
 
-docker-run: docker-run-android docker-run-ios
+docker-run: docker-run-android docker-run-ios-pdf docker-run-ios-svg
 docker-run-android:
-	docker run --rm -it  -v $$(PWD)/mounts/input:/mounts/input -v $$(PWD)/mounts/output:/mounts/output svg-to-android
-docker-run-ios:
-	docker run --rm -it  -v $$(PWD)/mounts/input:/mounts/input -v $$(PWD)/mounts/output:/mounts/output svg-to-ios
+	docker run --rm -it  -v $$(PWD)/mounts/input:/mounts/input -v $$(PWD)/mounts/output/android:/mounts/output svg-to-android
+docker-run-ios-pdf:
+	docker run --rm -it  -v $$(PWD)/mounts/input:/mounts/input -v $$(PWD)/mounts/output/ios-pdf:/mounts/output svg-to-ios-pdf
+docker-run-ios-svg:
+	docker run --rm -it  -v $$(PWD)/mounts/input:/mounts/input -v $$(PWD)/mounts/output/ios-svg:/mounts/output svg-to-ios-svg
 
-clean: clean-android clean-ios
+clean: clean-android clean-ios-pdf clean-ios-svg
 clean-android:
 	rm -rf mounts/output/android/*
-clean-ios:
-	rm -rf mounts/output/ios/*
+clean-ios-pdf:
+	rm -rf mounts/output/ios-pdf/*
+clean-ios-svg:
+	rm -rf mounts/output/ios-svg/*
 
 clean-sources:
 	rm -rf src/main/java/com/android

@@ -4,8 +4,7 @@ WORKDIR /opt/target
 VOLUME /mounts/input /mounts/output
 
 RUN apk --no-cache add \
-    inkscape \
     bash
-COPY convert-ios.sh .
+COPY convert-ios.svg.sh .
 
-CMD ["bash", "convert-ios.sh", "/mounts/input", "/mounts/output"]
+CMD ["bash", "convert-ios.svg.sh", "/mounts/input", "/mounts/output"]

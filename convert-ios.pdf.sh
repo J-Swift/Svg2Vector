@@ -3,7 +3,7 @@
 set -euo pipefail
 
 readonly in_dir="${1:-mounts/input}"
-readonly out_dir="${2-mounts/output}/ios"
+readonly out_dir="${2-mounts/output}"
 
 if [ ! -d "${in_dir}" ]; then
     echo "ERROR: input directory [${in_dir}] doesnt exist!"
