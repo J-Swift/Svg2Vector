@@ -24,4 +24,4 @@ VOLUME /mounts/input /mounts/output
 
 COPY --from=BUILDER /home/gradle/application.jar .
 
-CMD ["java", "-jar", "application.jar"]
+CMD ["java", "-jar", "application.jar", "/mounts/input", "/mounts/output"]

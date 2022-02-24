@@ -13,20 +13,32 @@ import java.util.stream.Stream;
 import com.android.ide.common.vectordrawable.Svg2Vector;
 
 public class Application {
-    private static final String DIR_INPUT = "/mounts/input";
-    private static final String DIR_OUTPUT = "/mounts/output";
-
     private static int numWarnings = 0;
     private static int numErrors   = 0;
 
     public static void main(final String[] args) {
-        final File outdir = new File(DIR_OUTPUT);
+        if (args.length != 2) {
+            throw new IllegalArgumentException("Must provide input and output directory");
+        }
+
+        final String inputDir = args[0];
+        final String outputDir = args[1];
+
+        if (!new File(inputDir).isDirectory()) {
+            throw new IllegalArgumentException(String.format("Not a valid directory [%s]!", inputDir));
+        }
+        if (!new File(outputDir).isDirectory()) {
+            throw new IllegalArgumentException(String.format("Not a valid directory [%s]!", outputDir));
+        }
+        System.out.println(String.format("Using input [%s] output [%s]", inputDir, outputDir));
+
+        final File outdir = new File(outputDir);
         if (!outdir.exists()) {
             outdir.mkdirs();
         }
 
-        try (Stream<Path> paths = Files.walk(Paths.get(DIR_INPUT))) {
-            paths.filter(Files::isRegularFile).filter(Application::isSvg).forEach(Application::convertToXml);
+        try (Stream<Path> paths = Files.walk(Paths.get(inputDir))) {
+            paths.filter(Files::isRegularFile).filter(Application::isSvg).forEach((it) -> convertToXml(it, outputDir));
         } catch (final IOException e) {
             e.printStackTrace();
         }
@@ -39,10 +51,10 @@ public class Application {
         System.out.println("");
     }
 
-    private static void convertToXml(final Path path) {
+    private static void convertToXml(final Path path, final String outputDir) {
         try {
             final File infile = path.toFile();
-            final File outfile = new File(DIR_OUTPUT + "/" + getXmlFilename(infile.getName()));
+            final File outfile = new File(outputDir + "/" + getXmlFilename(infile.getName()));
 
             if (outfile.exists()) {
                 System.out.println(String.format("[%s] already exists... skipping", outfile.getName()));
